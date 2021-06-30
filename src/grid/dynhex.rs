@@ -25,11 +25,8 @@ use super::{Coord, Grid, Piece};
   shouldn't be a problem, since most games don't have boards larger than 32K
   along a side.
 */
-#[derive(Default, Debug)]
-pub struct DynamicHexGrid<T>
-where
-    T: Default,
-{
+#[derive(Debug)]
+pub struct DynamicHexGrid<T> {
     min_max_dirty: bool,
 
     min_x: Cell<i16>,
@@ -40,10 +37,19 @@ where
     pieces: HashMap<Coord, T>,
 }
 
-impl<T> DynamicHexGrid<T>
-where
-    T: Default,
-{
+impl<T> DynamicHexGrid<T> {
+    pub fn new() -> DynamicHexGrid<T> {
+        DynamicHexGrid {
+            min_max_dirty: true,
+
+            min_x: Cell::new(0),
+            min_y: Cell::new(0),
+            max_x: Cell::new(0),
+            max_y: Cell::new(0),
+
+            pieces: Default::default(),
+        }
+    }
     fn ensure_min_max(&self) {
         if self.min_max_dirty {
             // TODO: make this more efficient by computing all in one pass.
@@ -61,8 +67,10 @@ where
 
 impl<T> Grid<T> for DynamicHexGrid<T>
 where
-    T: Piece + Default,
+    T: Piece,
 {
+    type CoordIter = HexAdjacents;
+
     fn min(&self) -> (i16, i16) {
         self.ensure_min_max();
 
@@ -111,17 +119,41 @@ where
         self.pieces.len()
     }
 
-    fn adjacents(&self, coord: Coord) -> Vec<Coord> {
-        let x = coord.x;
-        let y = coord.y;
-        vec![
-            Coord::new(x, y - 1),
-            Coord::new(x + 1, y - 1),
-            Coord::new(x - 1, y),
-            Coord::new(x + 1, y),
-            Coord::new(x - 1, y + 1),
-            Coord::new(x, y + 1),
-        ]
+    fn adjacents(&self, coord: Coord) -> Self::CoordIter {
+        HexAdjacents::new(coord)
+    }
+}
+
+#[derive(Debug)]
+pub struct HexAdjacents {
+    next_index: u8,
+    base: Coord,
+}
+
+impl HexAdjacents {
+    fn new(coord: Coord) -> HexAdjacents {
+        HexAdjacents {
+            next_index: 0,
+            base: coord,
+        }
+    }
+}
+
+impl Iterator for HexAdjacents {
+    type Item = Coord;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let (x_offset, y_offset) = match self.next_index {
+            0 => (0, -1),
+            1 => (1, -1),
+            2 => (-1, 0),
+            3 => (1, 0),
+            4 => (-1, 1),
+            5 => (0, 1),
+            _ => return None,
+        };
+        self.next_index += 1;
+        Some(Coord::new(self.base.x + x_offset, self.base.y + y_offset))
     }
 }
 
@@ -134,7 +166,7 @@ mod test {
     impl Piece for TestPiece {}
 
     fn def() -> DynamicHexGrid<TestPiece> {
-        DynamicHexGrid::<TestPiece>::default()
+        DynamicHexGrid::<TestPiece>::new()
     }
 
     #[test]
@@ -263,7 +295,7 @@ mod test {
                 Coord::new(2, 2),
                 Coord::new(3, 2)
             ],
-            grid.adjacents(Coord::new(3, 1))
+            grid.adjacents(Coord::new(3, 1)).collect::<Vec<_>>()
         );
     }
 }

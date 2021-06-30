@@ -1,4 +1,5 @@
 mod dynhex;
+pub use dynhex::DynamicHexGrid;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Default, Hash)]
 pub struct Coord {
@@ -18,6 +19,8 @@ pub trait Grid<P>
 where
     P: Piece,
 {
+    type CoordIter: Iterator<Item = Coord>;
+
     // Returns the current height of the board.
     fn height(&self) -> usize;
     // Returns the current width of the board.
@@ -38,5 +41,5 @@ where
 
     fn num_pieces(&self) -> usize;
 
-    fn adjacents(&self, coord: Coord) -> Vec<Coord>;
+    fn adjacents(&self, coord: Coord) -> Self::CoordIter;
 }
