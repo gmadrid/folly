@@ -22,3 +22,6 @@ pub struct HivePiece {
 }
 
 impl Piece for HivePiece {}
+
+#[cfg(test)]
+mod test {}

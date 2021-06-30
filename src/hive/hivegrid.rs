@@ -13,6 +13,18 @@ impl HiveGrid {
             base_grid: DynamicHexGrid::new(),
         }
     }
+
+    pub fn adjacent_occupied(&self, coord: Coord) -> Vec<Coord> {
+        self.adjacents(coord)
+            .filter(|c| !self.base_grid.occupied(*c))
+            .collect::<Vec<_>>()
+    }
+
+    pub fn adjacent_empty(&self, coord: Coord) -> Vec<Coord> {
+        self.adjacents(coord)
+            .filter(|c| !self.base_grid.occupied(*c))
+            .collect::<Vec<_>>()
+    }
 }
 
 impl Grid<HivePiece> for HiveGrid {
@@ -48,3 +60,6 @@ impl Grid<HivePiece> for HiveGrid {
         self.base_grid.adjacents(coord)
     }
 }
+
+#[cfg(test)]
+mod test {}
